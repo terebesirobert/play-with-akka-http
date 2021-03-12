@@ -26,7 +26,7 @@ class CampaignContextTest extends AnyFeatureSpecLike with TableDrivenPropertyChe
 
 
           Then("a new order request should be sent to the outgoing message processor")
-          campaignContext.cappingsFor(bidRequest) shouldEqual List.empty
+          campaignContext.cappingsFor(bidRequest) shouldEqual List(1)
         }
     }
   }
