@@ -9,31 +9,6 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 class FilterTest extends AnyFeatureSpecLike with ScalaCheckDrivenPropertyChecks with GivenWhenThen {
 
-  Feature("Test price filter in") {
-    Scenario("Filter int campaigns that match price requirements") {
-      Given("a campaign and a bid request")
-      val campaign = Campaign(1, "country", Targeting(Vector("siteid")), List.empty, 5.0)
-      val bidRequest = BidRequest("id", List(Impression("id", None, None, None, None, None, None, Some(2.0))), Site("id", "domain"), None, None)
-
-      When("the filter is applied")
-      val result = PriceFilter.filter(bidRequest, campaign)
-
-      Then("the price should be good")
-      result shouldBe true
-    }
-
-    Scenario("Filter out campaigns that don't match price requirements") {
-      Given("a campaign and a bid request")
-      val campaign = Campaign(1, "country", Targeting(Vector("siteid")), List.empty, 5.0)
-      val bidRequest = BidRequest("id", List(Impression("id", None, None, None, None, None, None, Some(6.0))), Site("id", "domain"), None, None)
-
-      When("the filter is applied")
-      val result = PriceFilter.filter(bidRequest, campaign)
-
-      Then("the price should not be good")
-      result shouldBe false
-    }
-  }
 
   Feature("Test country filter in") {
     Scenario("Filter in campaigns that match device country requirements") {
@@ -108,7 +83,7 @@ class FilterTest extends AnyFeatureSpecLike with ScalaCheckDrivenPropertyChecks 
       val result = CountryFilter.filter(bidRequest, campaign)
 
       Then("the country should be good")
-      result shouldBe true
+      result shouldBe false
     }
 
     Scenario("Filter out campaigns if device country specified on request does not match") {

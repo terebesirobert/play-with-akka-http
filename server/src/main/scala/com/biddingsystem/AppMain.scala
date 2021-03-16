@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import com.biddingsystem.bidding.{BiddingActor, CampaignContext}
-import com.biddingsystem.filters.Filter
+import com.biddingsystem.filters.{CampaignFilter, ImpressionFilter}
 import com.biddingsystem.models.CampaignProtocol.{Banner, Campaign, Targeting}
 import com.biddingsystem.server.HttpServerApp
 
@@ -31,7 +31,7 @@ object AppMain {
   )
 
   val actorSystem = ActorSystem.create("http-server-actor-system")
-  val campaignContext = CampaignContext(activeCampaigns, Filter.filter)
+  val campaignContext = CampaignContext(activeCampaigns, CampaignFilter.campaignFilter, ImpressionFilter.impressionFilter)
   val r = new Random
 
   val actorRef = () => actorSystem.actorOf(BiddingActor.props(campaignContext), s"bidding-actor-${UUID.randomUUID()}")
