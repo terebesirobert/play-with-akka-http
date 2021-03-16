@@ -5,13 +5,11 @@ import java.util.UUID
 import com.biddingsystem.models.CampaignProtocol.{Banner, Campaign, Targeting}
 import com.biddingsystem.models.RequestProtocol.{BidRequest, Site}
 import org.scalatest.featurespec.AnyFeatureSpecLike
-import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
-import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{GivenWhenThen, Inside}
+import org.scalatest.GivenWhenThen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class CampaignContextTest extends AnyFeatureSpecLike with TableDrivenPropertyChecks with ScalaCheckDrivenPropertyChecks with GivenWhenThen with Inside {
+class CampaignContextTest extends AnyFeatureSpecLike with ScalaCheckDrivenPropertyChecks with GivenWhenThen {
 
   Feature("Match bid requests and campaigns") {
 
@@ -19,18 +17,41 @@ class CampaignContextTest extends AnyFeatureSpecLike with TableDrivenPropertyChe
       campaigns =>
         Scenario(s"Match campaigns ${UUID.randomUUID()}") {
           Given("a campaign context")
-          val campaignContext = CampaignContext(campaigns)
+          val campaignContext = CampaignContext(
+            campaigns,
+            (_: BidRequest, _: Campaign) => true
+          )
 
-          When("a bid request is received")
-          val bidRequest = BidRequest("id", None, Site("name", "domain"), Option.empty, Option.empty)
+          When("a bid request is received with at least one matching campaign")
+          val bidRequest = BidRequest("id", List.empty, Site("id", "domain"), None, None)
 
 
           Then("a new order request should be sent to the outgoing message processor")
-          campaignContext.cappingsFor(bidRequest) shouldEqual List(1)
+          campaignContext.matchingCampaigns(bidRequest).length shouldBe campaigns.length
         }
     }
   }
 
+  Feature("Don't match bid requests and campaigns") {
+
+    forAll(Generators.campaignsGenerator) {
+      campaigns =>
+        Scenario(s"Don't match campaigns ${UUID.randomUUID()}") {
+          Given("a campaign context")
+          val campaignContext = CampaignContext(
+            campaigns,
+            (_: BidRequest, _: Campaign) => false
+          )
+
+          When("a bid request is received with no matching campaign")
+          val bidRequest = BidRequest("id", List.empty, Site("id", "domain"), None, None)
+
+
+          Then("a new order request should be sent to the outgoing message processor")
+          campaignContext.matchingCampaigns(bidRequest) shouldBe List.empty
+        }
+    }
+  }
 }
 
 case object Generators {
@@ -44,7 +65,7 @@ case object Generators {
 
   type BaseCampaignData = (Int, String, Targeting, List[Banner], Double)
 
-  def stringGenerator: Gen[String] = Gen.alphaNumStr.filter(_.nonEmpty)
+  def stringGenerator: Gen[String] = Gen.alphaStr.filter(_.nonEmpty)
   def intGenerator: Gen[Int] = Gen.chooseNum(0, 1000)
   def doubleGenerator: Gen[Double] = Gen.chooseNum(0.0, 1000.0)
 
@@ -54,11 +75,11 @@ case object Generators {
     country <- stringGenerator
     targeting <- targetingGenerator
     banners <- Gen.listOf(bannerGenerator)
-    bid <- doubleGenerator
+    bid <- doubleGenerator.filterNot(_.compareTo(0.0) == 0)
   } yield (id, country, targeting, banners, bid)
 
   private def targetingGenerator: Gen[Targeting] = for {
-    ids <- Gen.listOf(intGenerator)
+    ids <- Gen.listOf(stringGenerator)
   } yield Targeting(ids.toVector)
 
   private def bannerGenerator: Gen[Banner] = for {

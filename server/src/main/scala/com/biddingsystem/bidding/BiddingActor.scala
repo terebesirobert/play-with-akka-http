@@ -3,11 +3,11 @@ package com.biddingsystem.bidding
 import akka.actor.{Actor, Props}
 import com.biddingsystem.models.RequestProtocol.BidRequest
 
-case class BiddingActor(val biddingContext: CampaignContext) extends Actor {
+case class BiddingActor(biddingContext: CampaignContext) extends Actor {
 
   override def receive: Receive = {
     case bidRequest: BidRequest => {
-      sender() ! biddingContext.cappingsFor(bidRequest)
+      sender() ! biddingContext.matchingCampaigns(bidRequest)
     }
     case _ =>
       sender() ! List.empty
@@ -16,5 +16,5 @@ case class BiddingActor(val biddingContext: CampaignContext) extends Actor {
 }
 
 case object BiddingActor {
-  def props() = Props(BiddingActor(CampaignContext(List.empty)))
+  def props(context: CampaignContext) = Props(BiddingActor(context))
 }
